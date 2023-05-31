@@ -1,0 +1,14 @@
+version: '2.1'
+services:
+  hammond:
+    image: akhilrex/hammond
+    container_name: hammond
+    volumes:
+      - ./config:/config
+      - ./assets:/assets
+    restart: unless-stopped
+
+networks:
+  default:
+    name: internal
+    external: true

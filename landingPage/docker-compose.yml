@@ -1,0 +1,17 @@
+version: '3.6'
+
+services:
+  flame:
+    image: pawelmalak/flame
+    container_name: flame
+    volumes:
+      - ./flame/data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock # optional but required for Docker integration
+    environment:
+      - PASSWORD=homepageSetup
+    restart: unless-stopped
+
+networks:
+  default:
+    name: internal
+    external: true

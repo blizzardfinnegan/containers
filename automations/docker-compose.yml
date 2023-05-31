@@ -1,0 +1,143 @@
+version: "2"
+services: 
+  transmission-openvpn:
+    image: haugene/transmission-openvpn:5.0
+    container_name: mullvad
+    privileged: true
+      #cap_add:
+      #  - NET_ADMIN
+    environment:
+      - OPENVPN_PROVIDER=MULLVAD
+      - OPENVPN_USERNAME=5189266622301285
+      - OPENVPN_PASSWORD=m
+      - OPENVPN_CONFIG=gb_all
+      - LOCAL_NETWORK=172.20.0.0/24
+    #mullvad fix
+    sysctls:
+      - "net.ipv6.conf.all.disable_ipv6=0"
+    ports:
+      #VPN/Web port 
+      - 9091:9091
+      #QBT UI Port
+      - 8090:8090
+      #Bittorrent ports
+      - 6881:6881
+      - 6881:6881/udp
+#      #Sonarr port
+#      - 8989:8989
+#      #Radarr port
+#      - 7878:7878
+#      #Bazarr port
+#      - 6767:6767
+#      #Prowlarr port
+#      - 9696:9696
+    volumes:
+      - /opt/mullvadContainer:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+    restart: unless-stopped
+
+  qbittorrent:
+        image: linuxserver/qbittorrent
+        container_name: qbittorrent
+        environment:
+            - PUID=998
+            - PGID=997
+            - TZ=America/New_York
+            - UMASK_SET=022
+            - WEBUI_PORT=8090
+        volumes:
+            - ./qbt/config:/config
+            - /mnt/glacier/torrentSync/tempFolder:/downloads
+            - /mnt/glacier/torrentSync/sonarrParsing:/tvdownloads 
+            - /mnt/glacier/torrentSync/radarrParsing:/filmdownloads 
+            - /mnt/glacier/torrentSync/readarrParsing:/bookdownloads 
+            - /mnt/glacier/torrentSync/lidarrParsing:/musicdownloads
+        network_mode: service:transmission-openvpn
+        restart: unless-stopped
+        depends_on:
+          - transmission-openvpn
+
+  sonarr: #TV
+        image: linuxserver/sonarr:latest
+        container_name: sonarr
+        environment:
+            - PUID=998
+            - PGID=997
+            - TZ=America/New_York
+        volumes:
+            - /etc/localtime:/etc/localtime:ro
+            - ./sonarr/config:/config
+            - /mnt/glacier/TV:/tv
+            - /mnt/glacier/torrentSync/sonarrParsing:/downloads
+        restart: unless-stopped
+        #network_mode: service:transmission-openvpn
+        depends_on:
+          - qbittorrent
+
+  prowlarr: #Indexer management
+        image: lscr.io/linuxserver/prowlarr:develop
+        container_name: prowlarr
+        environment:
+            - PUID=998
+            - PGID=997
+            - TZ=America/New_York
+        volumes:
+            - ./prowlarr/config:/config
+        restart: unless-stopped
+        #network_mode: service:transmission-openvpn
+        depends_on:
+          - qbittorrent
+
+  radarr: #Movies
+        image: linuxserver/radarr:latest
+        container_name: radarr
+        environment:
+            - PUID=998
+            - PGID=997
+            - TZ=America/New_York
+        volumes:
+            - /etc/localtime:/etc/localtime:ro
+            - ./radarr/config:/config
+            - /mnt/glacier/Movies:/movies
+            - /mnt/glacier/torrentSync/radarrParsing:/downloads
+        restart: unless-stopped
+        #network_mode: service:transmission-openvpn
+        depends_on:
+          - qbittorrent
+
+  bazarr: #Subtitles
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=998
+      - PGID=997
+      - TZ=America/New_York
+    volumes:
+      - ./bazarr/config:/config
+      - /mnt/glacier/Movies:/movies 
+      - /mnt/glacier/TV:/tv 
+    #network_mode: service:transmission-openvpn
+    restart: unless-stopped
+
+      #  readarr:
+      #    image: lscr.io/linuxserver/readarr:develop
+      #    container_name: readarr
+      #    environment:
+      #      - PUID=998
+      #      - PGID=997
+      #      - TZ=America/New_York
+      #    volumes:
+      #      - ./readarr/config:/config
+      #      - /mnt/glacier/Audiobooks:/books
+      #      - /mnt/glacier/torrentSync/readarrParsing:/downloads
+      #    restart: unless-stopped
+      #    depends_on:
+      #      - qbittorrent
+
+networks:
+  default:
+      name: internal
+      external: true

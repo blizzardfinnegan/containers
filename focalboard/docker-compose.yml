@@ -1,0 +1,10 @@
+version: '3.0'
+services:
+  focalboard:
+    image: mattermost/focalboard:7.10.0
+    container_name: focalboard
+    
+networks:
+  default:
+    name: internal
+    external: true

@@ -1,0 +1,27 @@
+version: "3.5"
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    runtime: nvidia
+    container_name: jellyfin
+    volumes:
+      - /opt/jellyfin/config:/config
+      - /opt/jellyfin/cache:/cache
+      - /mnt/glacier/Movies:/movies
+      - /mnt/glacier/TV:/tv
+      - /mnt/glacier/TV-Gundam:/tv-Gundam
+      - ./config:/jellyfin/jellyfin-web:ro
+    environment:
+      - PGID=997
+      - PUID=998
+      - NVIDIA_VISIBLE_DEVICES=all
+    restart: "unless-stopped"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+networks:
+  default:
+    name: internal
+    external: true

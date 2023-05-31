@@ -1,0 +1,16 @@
+version: "3.7"
+services:
+  audiobookshelf:
+    container_name: audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    volumes:
+      - /mnt/glacier/Audiobooks:/audiobooks
+      - /mnt/glacier/Podcasts:/podcasts
+      - ./config:/config
+      - ./metadata:/metadata
+    restart: unless-stopped
+
+networks:
+  default:
+    name: internal
+    external: true

@@ -1,0 +1,16 @@
+version: '2'
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    environment:
+      - GENERIC_TIMEZONE="America/New_York"
+      - TZ="America/New_York"
+    volumes:
+      - ./.n8n:/home/node/.n8n
+    restart: unless-stopped
+
+networks:
+  default:
+    name: internal
+    external: true
